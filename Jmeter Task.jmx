@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.2">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Jmeter_Assesment" enabled="true">
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="FirstURL" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <boolProp name="ThreadGroup.delayedStart">false</boolProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="First_URL_Request" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">dummyjson.com</stringProp>
+          <stringProp name="HTTPSampler.protocol">https</stringProp>
+          <stringProp name="HTTPSampler.path">/products</stringProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <boolProp name="HTTPSampler.BROWSER_COMPATIBLE_MULTIPART">false</boolProp>
+          <boolProp name="HTTPSampler.image_parser">false</boolProp>
+          <boolProp name="HTTPSampler.concurrentDwn">false</boolProp>
+          <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
+          <boolProp name="HTTPSampler.md5">false</boolProp>
+          <intProp name="HTTPSampler.ipSourceType">0</intProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="FirstTask" enabled="true">
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="script">import org.json.simple.parser.JSONParser;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
+import com.opencsv.CSVWriter;
+
+// Extract Response Code
+String responseCode = ctx.getPreviousResult().getResponseCode();
+System.out.println(responseCode);
+
+
+if(responseCode.equals(&quot;200&quot;)){
+	// Fetch Respose Data
+	String responseData = ctx.getPreviousResult().getResponseDataAsString();
+	
+	// Create Object of Json Parser
+	JSONParser parser = new JSONParser();
+
+	// Create a JSONObject of the Response Data
+	JSONObject responseObject = (JSONObject) parser.parse(responseData);
+//	System.out.println(responseObject);
+
+	// Fetch the JSON Array from the JSON Object
+	JSONArray responseArray = responseObject.get(&quot;products&quot;);
+//	System.out.println(responseArray);
+
+	// Create String Array of the required header
+	String[] header = {&quot;id&quot;,&quot;title&quot;,&quot;description&quot;,&quot;price&quot;,&quot;discountPercentage&quot;,&quot;rating&quot;,&quot;stock&quot;,&quot;brand&quot;};
+
+	File file = new File(&quot;first_url_response.csv&quot;);
+	
+	// Create FileWriter Object with file as Parameter
+	FileWriter outputFile = new FileWriter(file);
+
+	// Create CSVWriter Object send outputFile as Parameter
+	CSVWriter writer = new CSVWriter(outputFile);
+
+	writer.writeNext(header);
+
+	for(int i=0; i&lt;responseArray.size(); i++){
+		JSONObject obj = (JSONObject)responseArray.get(i);
+		String[] data = new String[header.length];
+	
+		for(int j=0; j&lt;header.length; j++){
+			String val = obj.get(header[j]).toString();
+			data[j] = val;
+			
+		}
+
+		writer.writeNext(data);
+	}
+	
+	// Close CSVWriter
+	writer.close();
+	
+}
+else{
+	log.info(&quot;------Failed to fetch data-------&quot;);
+}
+
+
+</stringProp>
+            <stringProp name="scriptLanguage">java</stringProp>
+          </JSR223PostProcessor>
+          <hashTree/>
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="SecondTask" enabled="true">
+            <stringProp name="scriptLanguage">java</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="script">import java.io.FileReader;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import java.io.FileWriter;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+// Create object of FileReader and filepath as parameter
+FileReader reader = new FileReader(&quot;first_url_response.csv&quot;);
+CSVReader readCSV = new CSVReader(reader);
+List records = new ArrayList();
+String[] nextline;
+
+// Fetch each row using readNext function 
+while((nextline = readCSV.readNext()) != null){
+	records.add(nextline);
+}
+
+// Fetch Header(String[]) present at 0th index and converting it to List
+List headerList = Arrays.asList(records.get(0));
+
+
+// Fetch index of the required title
+int disPerIndedx = headerList.indexOf(&quot;discountPercentage&quot;);
+int titleIndex = headerList.indexOf(&quot;title&quot;);
+System.out.println(&quot;Index of discountPercentage: &quot;+disPerIndedx);
+System.out.println(&quot;Index of title: &quot;+titleIndex);
+
+
+// Sort records by discountPercentage (Descending) using Selection Sort
+for(int i=1; i&lt;records.size()-1; i++){
+	for(int j=i+1; j&lt;records.size(); j++){
+		float disPer1 = Float.parseFloat(records.get(i)[disPerIndedx]);
+		float disPer2 = Float.parseFloat(records.get(j)[disPerIndedx]);
+		
+		if(disPer1&lt;disPer2){
+			String[] tempArr = records.get(i);
+			records.set(i, records.get(j));
+			records.set(j, tempArr);
+		}
+	}
+}
+
+
+
+
+// i. Order based on discount Percentage, return ‘product title’ with maximum discount percentage.
+
+System.out.println(&quot;Product Title with Maximum Discount: &quot;+records.get(1)[titleIndex]);
+
+// ii. Return average discount percentage.
+
+float totalDisPer = 0.0;
+for(int i=1; i&lt;records.size(); i++){
+	float disPercentage = Float.parseFloat(records.get(i)[disPerIndedx]);
+	totalDisPer = totalDisPer+disPercentage;
+}
+float avgDiscountPercentage = totalDisPer/(records.size()-1);
+System.out.println(&quot;Average Discount Percentage is: &quot;+avgDiscountPercentage);
+
+// Create Object of Date to get Current Date with required Format
+Date date = new Date();
+SimpleDateFormat formatter = new SimpleDateFormat(&quot;yyyyMMdd&quot;);
+String date= formatter.format(date);
+String fileName = &quot;semicolon_&quot;+ date+&quot;.csv&quot;;
+
+// Create new file and provide the filepath
+File file = new File(fileName);
+
+// Create FileWriter Object with file as parameter
+FileWriter outputFile = new FileWriter(file);
+
+// Create CSVWriter Object with ; as Separator
+CSVWriter writer = new CSVWriter(outputFile, &apos;;&apos;, CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+
+// Write records to CSV file
+writer.writeAll(records);
+
+// Close Writer
+writer.close();
+
+
+
+</stringProp>
+          </JSR223PostProcessor>
+          <hashTree/>
+        </hashTree>
+      </hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="SecondURL" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">1</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <boolProp name="ThreadGroup.delayedStart">false</boolProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+      </ThreadGroup>
+      <hashTree>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Second_URL_Request" enabled="true">
+          <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.domain">gorest.co.in</stringProp>
+          <stringProp name="HTTPSampler.protocol">https</stringProp>
+          <stringProp name="HTTPSampler.path">/public/v2/todos</stringProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <boolProp name="HTTPSampler.BROWSER_COMPATIBLE_MULTIPART">false</boolProp>
+          <boolProp name="HTTPSampler.image_parser">false</boolProp>
+          <boolProp name="HTTPSampler.concurrentDwn">false</boolProp>
+          <stringProp name="HTTPSampler.concurrentPool">6</stringProp>
+          <boolProp name="HTTPSampler.md5">false</boolProp>
+          <intProp name="HTTPSampler.ipSourceType">0</intProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="ThirdTask" enabled="true">
+            <stringProp name="scriptLanguage">java</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="script">import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
+import com.opencsv.CSVWriter;
+
+// Fetch response code
+String responseCode = ctx.getPreviousResult().getResponseCode();
+System.out.println(responseCode);
+if(responseCode.equals(&quot;200&quot;)){
+	// Fetch response data
+	String responseData = ctx.getPreviousResult().getResponseDataAsString();
+
+	// Create object of JSOMParser
+	JSONParser parser = new JSONParser();
+	JSONArray responseArray = (JSONArray)parser.parse(responseData);
+	
+	// Create String array of the header
+	String[] header = {&quot;id&quot;,&quot;user_id&quot;,&quot;title&quot;,&quot;due_on&quot;,&quot;status&quot;};
+	List records = new ArrayList();
+	records.add(header);
+	
+	
+	// Fetch each object from JSONArray
+	for(int i=0; i&lt;responseArray.size(); i++){
+		JSONObject jsonObject = (JSONObject) responseArray.get(i);
+		String[] row = new String[header.length];
+
+		// Fetch values by key from each jsonObject
+		for(int k=0; k&lt;header.length; k++){
+		
+			String val1 = (jsonObject.get(header[k])).toString();
+			row[k]=val1;
+		}
+		records.add(row);
+	}
+
+	// Create File object
+	File file = new File(&quot;second_url_response.csv&quot;);
+	
+	// Create FileWriter Object with file as Parameter
+	FileWriter outputFile = new FileWriter(file);
+
+	// Create CSVWriter Object send outputFile as Parameter
+	CSVWriter writer = new CSVWriter(outputFile);
+
+	// Write all the String Array List using writeAll
+	writer.writeAll(records);
+
+	// Close CSVWriter
+	writer.close();
+
+	
+}
+else{
+	log.info(&quot;--------------Failed to Fetch Data ---------------&quot;);
+}
+</stringProp>
+          </JSR223PostProcessor>
+          <hashTree/>
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="FourthTask" enabled="true">
+            <stringProp name="scriptLanguage">java</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="script">import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+try{
+	// Create object of the filereader and provide the filepath as parameter
+	FileReader reader = new FileReader(&quot;second_url_response.csv&quot;);
+
+	// Create object of CSVReader and pass reader as parameter
+	CSVReader readCSV = new CSVReader(reader);
+
+	// Instantiate ArrayList
+	List records = new ArrayList();
+
+	// Fetch each row using readNext function of CSVReader as String Array
+	String[] nextline;
+	while((nextline = readCSV.readNext()) != null){
+
+		// Add each row to list
+		records.add(nextline);
+	}
+
+	// Fetch title from records as List
+	List header = Arrays.asList(records.get(0));
+
+	// Fetch index of the required title
+	int dueOnIndex = header.indexOf(&quot;due_on&quot;);
+	int titleIndex = header.indexOf(&quot;title&quot;);
+
+	// Create object of SimpleDateFormat to parse the String date
+	SimpleDateFormat inputFormat = new SimpleDateFormat(&quot;yyyy-MM-dd&apos;T&apos;HH:mm:ss.SSSXXX&quot;);
+	
+	// Sort records by due date (latest on top) using Selection Sort
+	for(int i=1; i&lt;records.size()-1; i++){
+		for(int j=i+1; j&lt;records.size(); j++){
+			String sdate1 = records.get(i)[dueOnIndex];
+			String sdate2 = records.get(j)[dueOnIndex];
+			
+			Date date1 = inputFormat.parse(sdate1);
+			Date date2 = inputFormat.parse(sdate2);
+
+			if(date1.compareTo(date2)&lt;0){
+				String[] tempArr = records.get(i);
+				records.set(i, records.get(j));
+				records.set(j, tempArr);
+			}
+			
+		}
+	}
+	
+	
+	// Since records has been sorted in decending order on the basis of Due Date - lastest due date will be at index 1
+	System.out.println(&quot;Title with the lastest due date: &quot;+records.get(1)[titleIndex]);
+
+	// Create another object of SimpleDateFormat
+	SimpleDateFormat outputFormat = new SimpleDateFormat(&quot;yyyyMMdd&quot;);
+
+	// Create new List and add header in the 0th index
+	List newRecords = new ArrayList();
+	newRecords.add(records.get(0));
+
+	// Fetch due_on date from records
+	for(int i=1; i&lt;records.size(); i++){
+		
+		String[] row = records.get(i);
+		
+		//since jmeter uses pass by reference, so we need to make the copy of data to keep original data intact
+		String[] rowCopy = Arrays.copyOf(row, row.length);
+
+		// Fetch due_on date as String and parse it to date
+		String sdate = rowCopy[dueOnIndex];
+		Date date = inputFormat.parse(sdate);
+		// Format date to &quot;yyyyMMdd&quot;
+		rowCopy[dueOnIndex] = outputFormat.format(date);
+		// Add each row with new due_on date format to new List
+		newRecords.add(rowCopy);
+			
+	}
+
+	// Get current date
+	Date d = new Date();
+	// Format date as required using SimpleDateFormat object by passing the date as parameter
+	String fileDate = outputFormat.format(d);
+	// Create qa file name
+	String fileName =  &quot;pipes_&quot;+fileDate+&quot;.csv&quot;;
+	// Create File object and pass the filepath as parameter
+	File file = new File(fileName);
+	// Create FileWriter object and pass the file as parameter
+	FileWriter fileWriter = new FileWriter(file);
+	// Create CSVWriter object and pass the fileWriter, separator as parameter
+	CSVWriter writer = new CSVWriter(fileWriter, &apos;|&apos;, CSVWriter.NO_QUOTE_CHARACTER, CSVWriter.DEFAULT_ESCAPE_CHARACTER, CSVWriter.DEFAULT_LINE_END);
+	// Using writeAll function of CSVWriter, add new list of String Array to the CSV
+	writer.writeAll(newRecords);
+	// Close the Writer
+	writer.close();
+
+	// Create new List
+	List customisedRecords = new ArrayList();
+	// Create new String Array for customised titles
+	String[] customisedHeader = {&quot;id&quot;, &quot;day_of_week&quot;, &quot;utc_offset&quot;};
+	// Add customised header to List
+	customisedRecords.add(customisedHeader);
+
+	// Fetch index of id from records
+	int idIndex = header.indexOf(&quot;id&quot;);
+	
+	// Date formatter to fetch week of the day
+	SimpleDateFormat formatWeek = new SimpleDateFormat(&quot;EEEE&quot;);
+
+	// Create object of Map
+	Map daysCount = new HashMap();
+	
+	// Extract all the required data from records
+	for(int i=1; i&lt;records.size(); i++){
+
+		// Fetch id from records
+		String id = records.get(i)[idIndex];
+
+		// Fetch due_on date
+		String sDate = records.get(i)[dueOnIndex];
+		// Parse to Date
+		Date date = inputFormat.parse(sDate);
+		// Extract week day
+		String weekDay = formatWeek.format(date);
+		// Extract utc_offset
+		String utc = sDate.split(&quot;\\+&quot;)[1];
+
+		String[] newRows = {id,weekDay,utc};
+		customisedRecords.add(newRows);
+
+		String day = weekDay.toLowerCase();
+		// Count weekdays
+		if(daysCount.containsKey(day)){
+                int count = daysCount.get(day);
+                daysCount.put(day, count+1);
+            }
+            else{
+                daysCount.put(day, 1);
+            }
+	}
+	
+	Set keys = daysCount.keySet();
+     int max =0;
+     String frequentDay = &quot;&quot;;
+     // Extract weekday with maximum count
+     for(Object obj : keys){
+         String key = obj.toString();
+         if(daysCount.get(key)&gt;max){
+             max = daysCount.get(key);
+             frequentDay = key;
+         }
+     }
+
+	// Create a file name
+	String customisedFileName = &quot;customized_&quot;+frequentDay+&quot;.csv&quot;;
+	// Create object of File and pass filepath as parameter
+	File file = new File(customisedFileName);
+	// Create FileWriter object and pass the file as parameter
+	FileWriter customisedFileWriter = new FileWriter(file);
+	CSVWriter customisedWriter = new CSVWriter(customisedFileWriter);
+	// Write customised data to CSV file
+	customisedWriter.writeAll(customisedRecords);
+	// Close the writer
+	customisedWriter.close();
+	
+	
+
+}
+catch(Exception e){
+	System.out.println(&quot;Error in Secound URL&gt;&gt;Task2&quot;+e);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</stringProp>
+          </JSR223PostProcessor>
+          <hashTree/>
+        </hashTree>
+      </hashTree>
+      <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+        <boolProp name="ResultCollector.error_logging">false</boolProp>
+        <objProp>
+          <name>saveConfig</name>
+          <value class="SampleSaveConfiguration">
+            <time>true</time>
+            <latency>true</latency>
+            <timestamp>true</timestamp>
+            <success>true</success>
+            <label>true</label>
+            <code>true</code>
+            <message>true</message>
+            <threadName>true</threadName>
+            <dataType>true</dataType>
+            <encoding>false</encoding>
+            <assertions>true</assertions>
+            <subresults>true</subresults>
+            <responseData>false</responseData>
+            <samplerData>false</samplerData>
+            <xml>false</xml>
+            <fieldNames>true</fieldNames>
+            <responseHeaders>false</responseHeaders>
+            <requestHeaders>false</requestHeaders>
+            <responseDataOnError>false</responseDataOnError>
+            <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+            <assertionsResultsToSave>0</assertionsResultsToSave>
+            <bytes>true</bytes>
+            <sentBytes>true</sentBytes>
+            <url>true</url>
+            <threadCounts>true</threadCounts>
+            <idleTime>true</idleTime>
+            <connectTime>true</connectTime>
+          </value>
+        </objProp>
+        <stringProp name="filename"></stringProp>
+      </ResultCollector>
+      <hashTree/>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
